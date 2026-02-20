@@ -79,7 +79,7 @@ public final class SQLPollTask {
         final var blob = rs.getBlob("data");
         final var data = blob.getBytes(1, (int) blob.length());
         eventMessenger.decodeEvent(data).ifPresent(event -> {
-          logger.debug("Received event " + event.getClass().getSimpleName() + " from redis");
+          logger.debug("Received event " + event.getClass().getSimpleName() + " from SQL messenger");
           eventManager.fireEvent(event);
         });
         lastPoll = rs.getLong("id");

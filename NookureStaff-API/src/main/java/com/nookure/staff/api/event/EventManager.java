@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -99,7 +100,7 @@ public final class EventManager {
       Class<? extends Event> eventClass = (Class<? extends Event>) parameterType;
 
       if (!listeners.containsKey(eventClass)) {
-        listeners.put(eventClass, new ArrayList<>());
+        listeners.put(eventClass, Collections.synchronizedList(new ArrayList<>()));
       }
 
       listeners.get(eventClass).add(new EventVector(method, listener, nookSubscribe, weak));
@@ -131,31 +132,33 @@ public final class EventManager {
     if (eventVectors == null) return CompletableFuture.completedFuture(event);
     if (eventVectors.isEmpty()) return CompletableFuture.completedFuture(event);
 
-    eventVectors.sort((o1, o2) -> {
+    final List<EventVector> snapshot;
+    synchronized (eventVectors) {
+      snapshot = new ArrayList<>(eventVectors);
+    }
+
+    snapshot.sort((o1, o2) -> {
       NookSubscribe nookSubscribe1 = o1.nookSubscribe();
       NookSubscribe nookSubscribe2 = o2.nookSubscribe();
 
       return Integer.compare(nookSubscribe1.priority().getSlot(), nookSubscribe2.priority().getSlot());
     });
 
-    return CompletableFuture.supplyAsync(() -> {
-      eventVectors.forEach(eventVector -> {
-        try {
-          final var listener = eventVector.listener();
+    snapshot.forEach(eventVector -> {
+      try {
+        final var listener = eventVector.listener();
 
-          if (listener == null) {
-            unregisterListener(eventVector.listener());
-            return;
-          }
-
-          eventVector.method().invoke(eventVector.listener(), event);
-        } catch (Exception e) {
-          throw new EventHandlerException("Could not invoke event handler", e);
+        if (listener == null) {
+          unregisterListener(eventVector.listener());
+          return;
         }
-      });
 
-      return event;
+        eventVector.method().invoke(eventVector.listener(), event);
+      } catch (Exception e) {
+        throw new EventHandlerException("Could not invoke event handler", e);
+      }
     });
 
+    return CompletableFuture.completedFuture(event);
   }
 }

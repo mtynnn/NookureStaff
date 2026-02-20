@@ -10,30 +10,52 @@ import com.nookure.staff.api.manager.PlayerWrapperManager;
 import com.nookure.staff.api.util.TextUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class OnServerBroadcast {
   @Inject
   private PlayerWrapperManager<Player> playerWrapperManager;
   @Inject
   private ConfigurationContainer<BukkitMessages> messages;
+  @Inject
+  private JavaPlugin plugin;
 
   @NookSubscribe
   public void onBroadcast(BroadcastMessage event) {
-    playerWrapperManager.stream()
-        .filter(player -> player.hasPermission(event.permission()))
-        .forEach(player -> player.sendMiniMessage(event.message()));
-     if (event.showInConsole())
-      Bukkit.getConsoleSender().sendMessage(
-          TextUtils.toComponent(event.message().replace("{prefix}", messages.get().prefix()))
-      );
+    Runnable runnable = () -> {
+      playerWrapperManager.stream()
+          .filter(player -> player.hasPermission(event.permission()))
+          .forEach(player -> player.sendMiniMessage(event.message()));
+      if (event.showInConsole()) {
+        Bukkit.getConsoleSender().sendMessage(
+            TextUtils.toComponent(event.message().replace("{prefix}", messages.get().prefix()))
+        );
+      }
+    };
+
+    if (Bukkit.isPrimaryThread()) {
+      runnable.run();
+      return;
+    }
+
+    Bukkit.getScheduler().runTask(plugin, runnable);
   }
 
   @NookSubscribe
   public void onBroadcastStaffMessage(BroadcastMessageExcept event) {
-    playerWrapperManager.stream()
-        .filter(player -> player.hasPermission(event.permission()) && !(player.getUniqueId().equals(event.except())))
-        .forEach(player -> player.sendMiniMessage(event.message()));
+    Runnable runnable = () -> {
+      playerWrapperManager.stream()
+          .filter(player -> player.hasPermission(event.permission()) && !(player.getUniqueId().equals(event.except())))
+          .forEach(player -> player.sendMiniMessage(event.message()));
 
-    Bukkit.getConsoleSender().sendMessage(TextUtils.toComponent(event.message().replace("{prefix}", messages.get().prefix())));
+      Bukkit.getConsoleSender().sendMessage(TextUtils.toComponent(event.message().replace("{prefix}", messages.get().prefix())));
+    };
+
+    if (Bukkit.isPrimaryThread()) {
+      runnable.run();
+      return;
+    }
+
+    Bukkit.getScheduler().runTask(plugin, runnable);
   }
 }

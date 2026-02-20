@@ -46,7 +46,9 @@ public final class PlayerWrapperManager<T> {
   @NotNull
   public Optional<PlayerWrapper> getPlayerWrapper(@NotNull T player) {
     Objects.requireNonNull(player, "Player cannot be null");
-    return Optional.ofNullable(playerWrappersByPlayerClass.get(player));
+    synchronized (playerWrappersByPlayerClass) {
+      return Optional.ofNullable(playerWrappersByPlayerClass.get(player));
+    }
   }
 
   /**
@@ -58,7 +60,9 @@ public final class PlayerWrapperManager<T> {
   @NotNull
   public Optional<PlayerWrapper> getPlayerWrapper(@NotNull UUID uuid) {
     Objects.requireNonNull(uuid, "UUID cannot be null");
-    return Optional.ofNullable(playerWrappersByUUID.get(uuid));
+    synchronized (playerWrappersByUUID) {
+      return Optional.ofNullable(playerWrappersByUUID.get(uuid));
+    }
   }
 
   /**
@@ -70,7 +74,9 @@ public final class PlayerWrapperManager<T> {
   @Nullable
   public PlayerWrapper getPlayerWrapperOrNull(@NotNull UUID uuid) {
     Objects.requireNonNull(uuid, "UUID cannot be null");
-    return playerWrappersByUUID.get(uuid);
+    synchronized (playerWrappersByUUID) {
+      return playerWrappersByUUID.get(uuid);
+    }
   }
 
   /**
@@ -120,7 +126,9 @@ public final class PlayerWrapperManager<T> {
   @NotNull
   public Optional<T> getPlayer(@NotNull PlayerWrapper playerWrapper) {
     Objects.requireNonNull(playerWrapper, "PlayerWrapper cannot be null");
-    return Optional.ofNullable(playerWrappersByPlayerClass.inverse().get(playerWrapper));
+    synchronized (playerWrappersByPlayerClass) {
+      return Optional.ofNullable(playerWrappersByPlayerClass.inverse().get(playerWrapper));
+    }
   }
 
   /**
@@ -182,7 +190,11 @@ public final class PlayerWrapperManager<T> {
         logger.warning("PlayerWrapper not found for player: %s", player);
         return;
       }
-      if (playerWrapper instanceof StaffPlayerWrapper) staffPlayers.remove(playerWrapper.getUniqueId());
+      if (playerWrapper instanceof StaffPlayerWrapper) {
+        synchronized (staffPlayers) {
+          staffPlayers.remove(playerWrapper.getUniqueId());
+        }
+      }
 
       synchronized (playerWrappersByUUID) {
         playerWrappersByUUID.remove(playerWrapper.getUniqueId());
@@ -196,7 +208,9 @@ public final class PlayerWrapperManager<T> {
    * @return a stream of player wrappers
    */
   public Stream<PlayerWrapper> stream() {
-    return playerWrappersByUUID.values().stream();
+    synchronized (playerWrappersByUUID) {
+      return new ArrayList<>(playerWrappersByUUID.values()).stream();
+    }
   }
 
   /**
@@ -205,7 +219,9 @@ public final class PlayerWrapperManager<T> {
    * @return the amount of staff players
    */
   public int getStaffCount() {
-    return staffPlayers.size();
+    synchronized (staffPlayers) {
+      return staffPlayers.size();
+    }
   }
 
   /**
@@ -214,20 +230,30 @@ public final class PlayerWrapperManager<T> {
    * @return the amount of player wrappers
    */
   public int getPlayerCount() {
-    return playerWrappersByUUID.size();
+    synchronized (playerWrappersByUUID) {
+      return playerWrappersByUUID.size();
+    }
   }
 
   public boolean isStaffPlayer(@NotNull UUID uuid) {
     Objects.requireNonNull(uuid, "UUID cannot be null");
-    return staffPlayers.contains(uuid);
+    synchronized (staffPlayers) {
+      return staffPlayers.contains(uuid);
+    }
   }
 
   /**
    * Clears all the mappings from the manager.
    */
   public void clear() {
-    playerWrappersByPlayerClass.clear();
-    playerWrappersByUUID.clear();
-    staffPlayers.clear();
+    synchronized (playerWrappersByPlayerClass) {
+      playerWrappersByPlayerClass.clear();
+    }
+    synchronized (playerWrappersByUUID) {
+      playerWrappersByUUID.clear();
+    }
+    synchronized (staffPlayers) {
+      staffPlayers.clear();
+    }
   }
 }

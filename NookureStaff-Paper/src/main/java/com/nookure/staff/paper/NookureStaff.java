@@ -292,19 +292,19 @@ public class NookureStaff {
 
   private void loadTasks() {
     if (config.get().modules.isFreeze() && config.get().freeze.freezeTimer() != -1) {
-      Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, injector.getInstance(FreezeTimerTask.class), 0, 20);
+      Bukkit.getScheduler().runTaskTimer(plugin, injector.getInstance(FreezeTimerTask.class), 0, 20);
     }
 
     if (config.get().modules.isFreeze()) {
-      Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, injector.getInstance(FreezeSpamMessage.class), 0, 20 * 5);
+      Bukkit.getScheduler().runTaskTimer(plugin, injector.getInstance(FreezeSpamMessage.class), 0, 20 * 5);
     }
 
     if (config.get().staffMode.actionBar()) {
-      Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, injector.getInstance(StaffModeActionbar.class), 0, 20);
+      Bukkit.getScheduler().runTaskTimer(plugin, injector.getInstance(StaffModeActionbar.class), 0, 20);
     }
 
     if (config.get().modules.isPinCode()) {
-      Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, injector.getInstance(PinTask.class), 0, 20 * 2);
+      Bukkit.getScheduler().runTaskTimer(plugin, injector.getInstance(PinTask.class), 0, 20 * 2);
     }
   }
 

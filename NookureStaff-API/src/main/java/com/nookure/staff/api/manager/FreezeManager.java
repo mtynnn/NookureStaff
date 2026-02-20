@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -123,11 +124,15 @@ public final class FreezeManager {
    * @return a stream of freeze containers
    */
   public Stream<FreezeContainer> stream() {
-    return freezeContainers.values().stream();
+    synchronized (freezeContainers) {
+      return List.copyOf(freezeContainers.values()).stream();
+    }
   }
 
   public Iterator<FreezeContainer> iterator() {
-    return freezeContainers.values().iterator();
+    synchronized (freezeContainers) {
+      return List.copyOf(freezeContainers.values()).iterator();
+    }
   }
 
   public static final class FreezeContainer {
